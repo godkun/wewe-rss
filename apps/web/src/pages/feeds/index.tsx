@@ -15,6 +15,10 @@ import {
   Tooltip,
   useDisclosure,
   Link,
+  Dropdown,
+  DropdownTrigger,
+  DropdownMenu,
+  DropdownItem,
 } from '@nextui-org/react';
 import { PlusIcon } from '@web/components/PlusIcon';
 import { trpc } from '@web/utils/trpc';
@@ -134,8 +138,8 @@ const Feeds = () => {
 
   return (
     <>
-      <div className="h-full flex justify-between">
-        <div className="w-64 p-4 h-full">
+      <div className="h-full flex flex-col md:flex-row justify-between">
+        <div className="w-full md:w-64 p-4 h-auto md:h-full border-b md:border-b-0 md:border-r">
           <div className="pb-4 flex justify-between align-middle items-center">
             <Button
               color="primary"
@@ -143,7 +147,7 @@ const Feeds = () => {
               onPress={onOpen}
               endContent={<PlusIcon />}
             >
-              添加
+              添加11
             </Button>
             <div className="font-normal text-sm">
               共{feedData?.items.length || 0}个订阅
@@ -155,6 +159,7 @@ const Feeds = () => {
               aria-label="订阅源"
               emptyContent="暂无订阅"
               onAction={(key) => setCurrentMpId(key as string)}
+              className="max-h-[300px] md:max-h-none"
             >
               <ListboxSection showDivider>
                 <ListboxItem
@@ -167,7 +172,7 @@ const Feeds = () => {
                 </ListboxItem>
               </ListboxSection>
 
-              <ListboxSection className="overflow-y-auto h-[calc(100vh-260px)]">
+              <ListboxSection className="overflow-y-auto h-auto md:h-[calc(100vh-260px)]">
                 {feedData?.items.map((item) => {
                   return (
                     <ListboxItem
@@ -189,140 +194,139 @@ const Feeds = () => {
           )}
         </div>
         <div className="flex-1 h-full flex flex-col">
-          <div className="p-4 pb-0 flex justify-between">
-            <h3 className="text-medium font-mono flex-1 overflow-hidden text-ellipsis break-keep text-nowrap pr-1">
-              {currentMpInfo?.mpName || '全部'}
-            </h3>
-            {currentMpInfo ? (
-              <div className="flex h-5 items-center space-x-4 text-small">
-                <div className="font-light">
-                  最后更新时间:
-                  {dayjs(currentMpInfo.syncTime * 1e3).format(
-                    'YYYY-MM-DD HH:mm:ss',
-                  )}
-                </div>
-                <Divider orientation="vertical" />
-                <Tooltip
-                  content="频繁调用可能会导致一段时间内不可用"
-                  color="danger"
-                >
-                  <Link
-                    size="sm"
-                    href="#"
-                    isDisabled={isGetArticlesLoading}
-                    onClick={async (ev) => {
-                      ev.preventDefault();
-                      ev.stopPropagation();
-                      await refreshMpArticles({ mpId: currentMpInfo.id });
-                      await refetchFeedList();
-                      await queryUtils.article.list.reset();
-                    }}
-                  >
-                    {isGetArticlesLoading ? '更新中...' : '立即更新'}
-                  </Link>
-                </Tooltip>
-                <Divider orientation="vertical" />
-
-                <Tooltip content="启用服务端定时更新">
-                  <div>
-                    <Switch
-                      size="sm"
-                      onValueChange={async (value) => {
-                        await updateMpInfo({
-                          id: currentMpInfo.id,
-                          data: {
-                            status: value ? 1 : 0,
-                          },
-                        });
-
-                        await refetchFeedList();
-                      }}
-                      isSelected={currentMpInfo?.status === 1}
-                    ></Switch>
+          <div className="p-4 pb-0">
+            <div className="flex flex-col md:flex-row justify-between gap-2">
+              <h3 className="text-medium font-mono overflow-hidden text-ellipsis break-keep text-nowrap">
+                {currentMpInfo?.mpName || '全部'}
+              </h3>
+              
+              {currentMpInfo ? (
+                <div className="flex flex-wrap gap-2 md:gap-4 text-small items-center">
+                  <div className="font-light text-sm">
+                    更新: {dayjs(currentMpInfo.syncTime * 1e3).format('YYYY-MM-DD HH:mm:ss')}
                   </div>
-                </Tooltip>
-                <Divider orientation="vertical" />
-                <Tooltip content="仅删除订阅源，已获取的文章不会被删除">
-                  <Link
-                    href="#"
-                    color="danger"
-                    size="sm"
-                    isDisabled={isDeleteFeedLoading}
-                    onClick={async (ev) => {
-                      ev.preventDefault();
-                      ev.stopPropagation();
+                  
+                  <div className="flex gap-2 items-center">
+                    <Tooltip content="频繁调用可能会导致一段时间内不可用" color="danger">
+                      <Link
+                        size="sm"
+                        href="#"
+                        isDisabled={isGetArticlesLoading}
+                        onClick={async (ev) => {
+                          ev.preventDefault();
+                          ev.stopPropagation();
+                          await refreshMpArticles({ mpId: currentMpInfo.id });
+                          await refetchFeedList();
+                          await queryUtils.article.list.reset();
+                        }}
+                      >
+                        {isGetArticlesLoading ? '更新中...' : '立即更新'}
+                      </Link>
+                    </Tooltip>
 
-                      if (window.confirm('确定删除吗？')) {
-                        await deleteFeed(currentMpInfo.id);
-                        navigate('/feeds');
+                    <Dropdown>
+                      <DropdownTrigger>
+                        <Button size="sm" variant="flat">
+                          更多操作
+                        </Button>
+                      </DropdownTrigger>
+                      <DropdownMenu aria-label="更多操作">
+                        <DropdownItem>
+                          <div className="flex items-center gap-2">
+                            <span>定时更新</span>
+                            <Switch
+                              size="sm"
+                              onValueChange={async (value) => {
+                                await updateMpInfo({
+                                  id: currentMpInfo.id,
+                                  data: {
+                                    status: value ? 1 : 0,
+                                  },
+                                });
+                                await refetchFeedList();
+                              }}
+                              isSelected={currentMpInfo?.status === 1}
+                            />
+                          </div>
+                        </DropdownItem>
+                        <DropdownItem>
+                          <Link
+                            size="sm"
+                            showAnchorIcon
+                            target="_blank"
+                            href={`${serverOriginUrl}/feeds/${currentMpInfo.id}.atom`}
+                            color="foreground"
+                          >
+                            RSS订阅
+                          </Link>
+                        </DropdownItem>
+                        <DropdownItem className="text-danger" onClick={async () => {
+                          if (window.confirm('确定删除吗？')) {
+                            await deleteFeed(currentMpInfo.id);
+                            navigate('/feeds');
+                            await refetchFeedList();
+                          }
+                        }}>
+                          删除订阅
+                        </DropdownItem>
+                      </DropdownMenu>
+                    </Dropdown>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex flex-wrap gap-2">
+                  <Tooltip content="频繁调用可能会导致一段时间内不可用" color="danger">
+                    <Link
+                      size="sm"
+                      href="#"
+                      isDisabled={isRefreshAllMpArticlesRunning || isGetArticlesLoading}
+                      onClick={async (ev) => {
+                        ev.preventDefault();
+                        ev.stopPropagation();
+                        await refreshMpArticles({});
                         await refetchFeedList();
-                      }
-                    }}
-                  >
-                    删除
-                  </Link>
-                </Tooltip>
-
-                <Divider orientation="vertical" />
-                <Tooltip content={<div>可添加.atom/.rss/.json格式输出</div>}>
-                  <Link
-                    size="sm"
-                    showAnchorIcon
-                    target="_blank"
-                    href={`${serverOriginUrl}/feeds/${currentMpInfo.id}.atom`}
-                    color="foreground"
-                  >
-                    RSS
-                  </Link>
-                </Tooltip>
-              </div>
-            ) : (
-              <div className="flex gap-2">
-                <Tooltip
-                  content="频繁调用可能会导致一段时间内不可用"
-                  color="danger"
-                >
-                  <Link
-                    size="sm"
-                    href="#"
-                    isDisabled={
-                      isRefreshAllMpArticlesRunning || isGetArticlesLoading
-                    }
-                    onClick={async (ev) => {
-                      ev.preventDefault();
-                      ev.stopPropagation();
-                      await refreshMpArticles({});
-                      await refetchFeedList();
-                      await queryUtils.article.list.reset();
-                    }}
-                  >
-                    {isRefreshAllMpArticlesRunning || isGetArticlesLoading
-                      ? '更新中...'
-                      : '更新全部'}
-                  </Link>
-                </Tooltip>
-                <Link
-                  href="#"
-                  color="foreground"
-                  onClick={handleExportOpml}
-                  size="sm"
-                >
-                  导出OPML
-                </Link>
-                <Divider orientation="vertical" />
-                <Link
-                  size="sm"
-                  showAnchorIcon
-                  target="_blank"
-                  href={`${serverOriginUrl}/feeds/all.atom`}
-                  color="foreground"
-                >
-                  RSS
-                </Link>
-              </div>
-            )}
+                        await queryUtils.article.list.reset();
+                      }}
+                    >
+                      {isRefreshAllMpArticlesRunning || isGetArticlesLoading ? '更新中...' : '更新全部'}
+                    </Link>
+                  </Tooltip>
+                  
+                  <Dropdown>
+                    <DropdownTrigger>
+                      <Button size="sm" variant="flat">
+                        更多操作
+                      </Button>
+                    </DropdownTrigger>
+                    <DropdownMenu aria-label="更多操作">
+                      <DropdownItem>
+                        <Link
+                          href="#"
+                          color="foreground"
+                          onClick={handleExportOpml}
+                          size="sm"
+                        >
+                          导出OPML
+                        </Link>
+                      </DropdownItem>
+                      <DropdownItem>
+                        <Link
+                          size="sm"
+                          showAnchorIcon
+                          target="_blank"
+                          href={`${serverOriginUrl}/feeds/all.atom`}
+                          color="foreground"
+                        >
+                          RSS订阅
+                        </Link>
+                      </DropdownItem>
+                    </DropdownMenu>
+                  </Dropdown>
+                </div>
+              )}
+            </div>
           </div>
-          <div className="p-2 overflow-y-auto">
+          <div className="p-2 overflow-y-auto flex-1">
             <ArticleList></ArticleList>
           </div>
         </div>
